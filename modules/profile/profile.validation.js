@@ -3,7 +3,7 @@ import { z } from "zod";
 const bodyTypeEnum = ["slim", "athletic", "average", "heavy"];
 const physicalStatusEnum = ["normal", "disabled"];
 const habitEnum = ["no", "occasionally", "frequently", "yes"];
-const manglikEnum = ["yes", "no", "partial"];
+const manglikEnum = ["non-manglik", "manglik", "anshik-manglik", "dont-know"];
 const dietEnum = ["vegetarian", "non_vegetarian", "eggetarian", "vegan"];
 
 export const parseJsonIfString = (schema) =>
@@ -80,10 +80,12 @@ const familySchema = z.object({
 });
 
 const horoscopeSchema = z.object({
-  tob: z.string().datetime().optional(),
+  tob: z.string().optional(),
   pob: z.string().optional(),
-  star: z.string().optional(),
-  raasi: z.string().optional(),
+  rashi: z.string().optional(),
+  nakshatra: z.string().optional(),
+  gotra: z.string().optional(),
+  notes: z.string().optional(),
   manglik: z.enum(manglikEnum).optional(),
 });
 
@@ -94,9 +96,9 @@ export const createProfileSchema = z.object({
   location: parseJsonIfString(locationSchema.optional()),
   professional: parseJsonIfString(professionalSchema.optional()),
   family: parseJsonIfString(familySchema.optional()),
-  horoscope: horoscopeSchema.optional(),
-  hobbies: z.array(z.string()).optional(),
-  interests: z.array(z.string()).optional(),
+  horoscope: parseJsonIfString(horoscopeSchema.optional()),
+  hobbies: parseJsonIfString(z.array(z.string()).optional()),
+  interests: parseJsonIfString(z.array(z.string()).optional()),
   images: z.array(z.file()).optional(),
 });
 
@@ -107,9 +109,8 @@ export const updateProfileSchema = z.object({
   location: parseJsonIfString(locationSchema.partial()).optional(),
   professional: parseJsonIfString(professionalSchema.partial()).optional(),
   family: parseJsonIfString(familySchema.partial()).optional(),
-  horoscope: horoscopeSchema.partial().optional(),
-
-  hobbies: z.array(z.string()).optional(),
-  interests: z.array(z.string()).optional(),
+  horoscope: parseJsonIfString(horoscopeSchema.partial().optional()),
+  hobbies: parseJsonIfString(z.array(z.string()).optional()),
+  interests: parseJsonIfString(z.array(z.string()).optional()),
   images: z.array(z.file()).optional(),
 });

@@ -63,9 +63,11 @@ export const EXPECTED_STRUCTURE = {
   horoscope: {
     tob: true,
     pob: true,
-    star: true,
-    raasi: true,
+    rashi: true,
+    nakshatra: true,
+    gotra: true,
     manglik: true,
+    notes: true,
   },
 
   hobbies: true,

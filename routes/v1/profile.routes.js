@@ -20,15 +20,19 @@ router
     asyncHandler(ProfileController.createProfile),
   );
 
+router
+  .route("/horoscope")
+  .post(isAuth, asyncHandler(ProfileController.addHoroscope));
 router.route("/status").get(isAuth, asyncHandler(ProfileController.getStatus));
 router.route("/all").get(isAuth, asyncHandler(ProfileController.getAllProfile));
+router.route("/me").get(isAuth, asyncHandler(ProfileController.getMyProfile));
 router.route("/:id").get(isAuth, asyncHandler(ProfileController.getProfile));
 
 router
   .route("/:id")
   .patch(
-    isAuth,
     upload.array("images", 6),
+    isAuth,
     validate(updateProfileSchema),
     asyncHandler(ProfileController.updateProfile),
   );

@@ -112,14 +112,16 @@ const profileSchema = new mongoose.Schema(
     },
 
     horoscope: {
-      tob: Date,
+      tob: String,
       pob: String,
-      star: String,
-      raasi: String,
+      rashi: String,
+      nakshatra: String,
+      gotra: String,
       manglik: {
         type: String,
-        enum: ["yes", "no", "partial"],
+        enum: ["non-manglik", "manglik", "anshik-manglik", "dont-know"],
       },
+      notes: String,
     },
 
     hobbies: [String],

@@ -7,7 +7,7 @@ export async function sendEmail(to, link) {
       bounce_address: process.env.ZOHO_BOUNCE_ADDRESS,
       from: {
         address: process.env.ZOHO_MAIL_FROM,
-        name: "Vivah Bandhan",
+        name: "Shaadi Dekho",
       },
       to: [{ email_address: { address: to } }],
       subject: "Verify Your Email",

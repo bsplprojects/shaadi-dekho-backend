@@ -24,6 +24,16 @@ export class ProfileService {
       images: imagePaths,
     });
 
+    if (profile) {
+      await Auth.updateOne(
+        { _id: userId },
+        { $set: { onBoarded: true } },
+        {
+          new: true,
+        },
+      );
+    }
+
     return profile;
   }
 
@@ -35,10 +45,10 @@ export class ProfileService {
     return profile;
   }
 
-  static async getAll() {
+  static async getAll(userId) {
     // must be paginated
-    const profiles = await Profile.find({}).select(
-      "memberType memberId verified user basicDetails.name basicDetails.dob basicDetails.height religion.religion location.state professional.education professional.occupation professional.annualIncome images createdAt",
+    const profiles = await Profile.find({ user: { $ne: userId } }).select(
+      "memberType memberId verified user basicDetails.name basicDetails.dob basicDetails.height basicDetails.age religion.religion location.state professional.education professional.occupation professional.annualIncome images createdAt",
     );
     return profiles;
   }
@@ -47,12 +57,23 @@ export class ProfileService {
     if (!id) {
       throw new ApiError("Missing id", 400);
     }
-    const updatedProfile = await Profile.findByIdAndUpdate(id, data, {
-      new: true,
-    });
-    if (!updatedProfile) {
+
+    const profile = await Profile.findById(id);
+    if (!profile) {
       throw new ApiError("Profile not found", 400);
     }
+
+    const mergedImages =
+      imagePaths?.length > 0
+        ? [...profile.images, ...imagePaths]
+        : profile.images;
+
+    const updatedProfile = await Profile.findByIdAndUpdate(
+      id,
+      { ...data, images: mergedImages },
+      { new: true },
+    );
+
     return updatedProfile;
   }
 
@@ -85,8 +106,35 @@ export class ProfileService {
       throw new ApiError("Profile not found", 400);
     }
 
-    // calculating profile completeness score along with which blocks are completed/missing
     const status = calculateProfileCompletion(profile);
     return status;
+  }
+
+  static async getMyProfile(id) {
+    if (!id) {
+      throw new ApiError("Missing id", 400);
+    }
+    const profile = await Profile.findOne({
+      user: id,
+    }).lean();
+    if (!profile) {
+      throw new ApiError("Profile not found", 400);
+    }
+    return profile;
+  }
+
+  static async addHoroscope(id, body) {
+    if (!id) {
+      throw new ApiError("Missing id", 400);
+    }
+    const profile = await Profile.findOneAndUpdate(
+      { user: id },
+      { horoscope: body },
+      { returnDocument: "after" },
+    );
+    if (!profile) {
+      throw new ApiError("Profile not found", 400);
+    }
+    return profile;
   }
 }

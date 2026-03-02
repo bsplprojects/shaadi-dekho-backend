@@ -37,7 +37,7 @@ router.route("/me").get(isAuth, asyncHandler(AuthController.me));
 router.route("/logout").post(isAuth, asyncHandler(AuthController.logout));
 
 // REFRESH ROUTE
-router.route("/refresh").get(asyncHandler(AuthController.refresh));
+router.route("/refresh").post(asyncHandler(AuthController.refresh));
 
 // VERIFY EMAIL
 router.route("/verify-email").post(asyncHandler(AuthController.verifyEmail));

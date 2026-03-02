@@ -82,6 +82,7 @@ export class AuthService {
       _id: user._id,
       email: user.email,
       phone: user.phone,
+      onBoarded: user.onBoarded,
       isEmailVerified: user.isEmailVerified,
       lastLoginAt: user.lastLoginAt,
     };

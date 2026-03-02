@@ -52,6 +52,10 @@ export const authSchema = new mongoose.Schema(
     lastLoginAt: {
       type: Date,
     },
+    onBoarded: {
+      type: Boolean,
+      default: false,
+    },
     role: {
       type: String,
       enum: ["admin", "user"],
