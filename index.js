@@ -11,7 +11,7 @@ const __dirname = path.resolve();
 
 app.use(
   cors({
-    origin: "http://localhost:8080",
+    origin: ["http://localhost:8080", "https://sd.bucksoftech.com"],
     credentials: true,
   }),
 );
