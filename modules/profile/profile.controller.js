@@ -4,7 +4,7 @@ import { ApiError } from "../../utils/apiError.js";
 import { logger } from "../../lib/logger.js";
 import mongoose from "mongoose";
 
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = process.env.BASE_URL || "https://sdbackend.bucksoftech.com";
 
 export class ProfileController {
   static async createProfile(req, res) {

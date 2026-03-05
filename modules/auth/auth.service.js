@@ -1,7 +1,11 @@
 import { ApiError } from "../../utils/apiError.js";
 import Auth from "./auth.model.js";
-import { sendEmail } from "../../utils/email.js";
+import { sendEmail, sendWelcomeMail } from "../../utils/email.js";
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
+import { logger } from "../../lib/logger.js";
+import Otp from "../auth/otp.model.js";
+import crypto from "crypto";
+import { generateOtp, hashOtp, sendSMS } from "../../utils/otp.js";
 
 export class AuthService {
   static async register({ email, phone, password }) {
@@ -49,16 +53,21 @@ export class AuthService {
       phone: user.phone,
     };
 
+    // send welcome mail
+    if (email) {
+      await sendWelcomeMail(user.email);
+    }
+
     return { response, accessToken, refreshToken };
   }
 
-  static async login({ email, phone, password }) {
-    if (!email && !phone) {
+  static async login({ credential, password }) {
+    if (!credential) {
       throw new ApiError("Either email or phone is required", 400);
     }
 
     const user = await Auth.findOne({
-      $or: [{ email }, { phone }],
+      $or: [{ email: credential }, { phone: credential }],
     }).select("+password");
 
     if (!user) {
@@ -68,6 +77,77 @@ export class AuthService {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       throw new ApiError("Incorrect credentials", 400);
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    user.refreshTokenExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    user.lastLoginAt = Date.now();
+    await user.save();
+
+    const response = {
+      _id: user._id,
+      email: user.email,
+      phone: user.phone,
+      onBoarded: user.onBoarded,
+      isEmailVerified: user.isEmailVerified,
+      lastLoginAt: user.lastLoginAt,
+    };
+
+    return { response, accessToken, refreshToken };
+  }
+
+  static async sendOtp(phone) {
+    const user = await Auth.findOne({ phone });
+    if (!user) {
+      throw new ApiError("User not found", 400);
+    }
+
+    const otp = generateOtp();
+    const otpHash = hashOtp(otp);
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const otpResponse = await Otp.create({ phone, otp: otpHash, expiresAt });
+    logger.debug(otp);
+
+    if (!otpResponse) {
+      throw new ApiError("Failed to send OTP", 400);
+    }
+
+    await sendSMS(phone, otp);
+
+    return true;
+  }
+
+  static async verifyOtp({ phone, otp }) {
+    const otpResponse = await Otp.findOne({ phone }).sort({ createdAt: -1 });
+    if (!otpResponse) {
+      throw new ApiError("OTP not found. Please try again", 400);
+    }
+
+    if (otpResponse.attempts >= 3) {
+      throw new ApiError("Too many attempts. Please try again later", 400);
+    }
+
+    if (new Date() > otpResponse.expiresAt) {
+      throw new ApiError("OTP expired. Please try again", 400);
+    }
+
+    const hashed = hashOtp(otp);
+
+    if (hashed !== otpResponse.otp) {
+      otpResponse.attempts += 1;
+      await otpResponse.save();
+      throw new ApiError("Incorrect OTP", 400);
+    }
+
+    await Otp.deleteMany({ phone });
+
+    const user = await Auth.findOne({ phone });
+    if (!user) {
+      throw new ApiError("User not found", 400);
     }
 
     const accessToken = generateAccessToken(user._id);

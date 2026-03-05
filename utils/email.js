@@ -67,3 +67,57 @@ export async function sendEmail(to, link) {
     },
   );
 }
+
+export async function sendWelcomeMail(to) {
+  await axios.post(
+    "https://api.zeptomail.in/v1.1/email",
+    {
+      bounce_address: process.env.ZOHO_BOUNCE_ADDRESS,
+      from: {
+        address: process.env.ZOHO_MAIL_FROM,
+        name: "Shadi",
+      },
+      to: [{ email_address: { address: to } }],
+      subject: "Welcome to ShadiDekho",
+      htmlbody: `
+   <!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background-color: #FFFDF9; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .container { max-width: 500px; margin: 40px auto; background: #ffffff; border: 1px solid #eee; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .content { padding: 40px; text-align: center; }
+        .logo { color: #E11D48; font-size: 28px; font-weight: bold; font-family: serif; font-style: italic; margin-bottom: 30px; }
+        h1 { color: #1e293b; font-size: 22px; margin-bottom: 20px; }
+        p { color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 30px; }
+        .btn { background-color: #E11D48; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 50px; font-weight: 600; display: inline-block; }
+        .footer { padding: 20px; font-size: 12px; color: #94a3b8; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="logo">ShaadiDekho</div>
+            <h1>The start of something beautiful.</h1>
+            <p>
+                Namaste 🙏<br><br>
+                Welcome to the community! We're here to help you find a partner who truly complements your life and values. Your journey toward a beautiful union begins right now.
+            </p>
+            <a href={${process.env.CLIENT_URL}/matches} class="btn">Explore Profiles</a>
+        </div>
+        <div class="footer">
+            &copy; 2026 ShaadiDekho • Helping hearts find their home.
+        </div>
+    </div>
+</body>
+</html>
+          `,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Zoho-enczapikey ${process.env.ZOHO_API_KEY}`,
+      },
+    },
+  );
+}

@@ -1,6 +1,8 @@
 import { AuthService } from "./auth.service.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { ApiError } from "../../utils/apiError.js";
+import { logger } from "../../lib/logger.js";
+import { sendEmail } from "../../utils/email.js";
 
 const cookieOptions = {
   httpOnly: true,
@@ -31,14 +33,13 @@ export class AuthController {
 
   // LOGIN
   static async login(req, res) {
-    const { email, phone, password } = req.body;
+    const { credential, password } = req.body;
     const {
       response: user,
       accessToken,
       refreshToken,
     } = await AuthService.login({
-      email,
-      phone,
+      credential,
       password,
     });
     res.cookie("accessToken", accessToken, {
@@ -50,6 +51,32 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return res.json(new ApiResponse(200, "Logged in successfully", user));
+  }
+
+  // LOGIN VIA OTP
+  static async sendOtp(req, res) {
+    const { phone } = req.body;
+    const response = await AuthService.sendOtp(phone);
+    return res.json(new ApiResponse(200, "OTP sent successfully", response));
+  }
+
+  // VERIFY OTP
+  static async verifyOtp(req, res) {
+    const { phone, otp } = req.body;
+    const {
+      response: user,
+      accessToken,
+      refreshToken,
+    } = await AuthService.verifyOtp({ phone, otp });
+    res.cookie("accessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: 3 * 60 * 60 * 1000,
+    });
+    res.cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    return res.json(new ApiResponse(200, "OTP verified successfully", user));
   }
 
   // LOGOUT

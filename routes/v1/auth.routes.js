@@ -8,6 +8,13 @@ import {
   updateStatusSchema,
 } from "../../modules/auth/auth.validation.js";
 import { isAuth } from "../../middlewares/auth.middleware.js";
+import { rateLimit } from "express-rate-limit";
+
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: "Too many requests from this IP, please try again after 15 minutes",
+});
 
 const router = express.Router();
 
@@ -29,6 +36,19 @@ router
 router
   .route("/login")
   .post(validate(loginSchema), asyncHandler(AuthController.login));
+
+// LOGIN VIA OTP
+router.route("/phone").post(
+  // otpLimiter,
+  // validate(phoneSchema),
+  asyncHandler(AuthController.sendOtp),
+);
+
+// VERIFY OTP
+router.route("/otp").post(
+  // otpLimiter,
+  asyncHandler(AuthController.verifyOtp),
+);
 
 // PROFILE ROUTE
 router.route("/me").get(isAuth, asyncHandler(AuthController.me));

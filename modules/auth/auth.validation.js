@@ -7,7 +7,18 @@ const emailSchema = z.preprocess(
   z.email("Invalid email address").toLowerCase().trim().optional(),
 );
 
-const phoneSchema = z.preprocess(
+const credentialSchema = z.preprocess(
+  emptyToUndefined,
+  z
+    .string()
+    .regex(
+      /^((?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}|^[6-9]\d{9})$/,
+      "Invalid email or phone number",
+    )
+    .optional(),
+);
+
+export const phoneSchema = z.preprocess(
   emptyToUndefined,
   z
     .string()
@@ -35,15 +46,19 @@ export const registerSchema = z
 
 export const loginSchema = z
   .object({
-    email: emailSchema.optional(),
-    phone: phoneSchema.optional(),
+    credential: credentialSchema.optional(),
     password: passwordSchema,
   })
-  .refine((data) => data.email || data.phone, {
+  .refine((data) => data.credential, {
     message: "Either email or phone is required",
-    path: ["email"],
+    path: ["credential"],
   });
 
 export const updateStatusSchema = z.object({
   status: z.enum(["active", "blocked", "deleted"]),
+});
+
+export const otpSchema = z.object({
+  phone: z.string().regex(/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s./0-9]*$/),
+  otp: z.string().optional(),
 });
