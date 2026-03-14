@@ -12,6 +12,8 @@ const cookieOptions = {
 };
 
 export class AuthController {
+ 
+ 
   // REGISTER
   static async register(req, res) {
     const { email, phone, password } = req.body;

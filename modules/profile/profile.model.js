@@ -7,7 +7,6 @@ const profileSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
-
     basicDetails: {
       profileFor: {
         type: String,

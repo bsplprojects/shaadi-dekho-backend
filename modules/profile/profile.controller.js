@@ -82,4 +82,41 @@ export class ProfileController {
       new ApiResponse(200, "Horoscope added successfully", profile),
     );
   }
+  static async addPreferences(req, res) {
+    const preferences = await ProfileService.addPreferences(
+      req.userId,
+      req.body,
+    );
+    return res.json(
+      new ApiResponse(200, "Preferences added successfully", preferences),
+    );
+  }
+
+  static async updatePreference(req, res) {
+    const update = await ProfileService.updatePreference(req.userId, req.body);
+    return res.json(
+      new ApiResponse(200, "Preferences updated successfully", update),
+    );
+  }
+
+  static async getPreference(req, res) {
+    const preference = await ProfileService.getPreference(req.userId);
+    return res.json(
+      new ApiResponse(200, "Preference fetched successfully", preference),
+    );
+  }
+
+  static async filterMatchedProfile(req, res) {
+    const filterProfiles = await ProfileService.filterMatchedProfile(
+      req.body,
+      req.userId,
+    );
+    return res.json(
+      new ApiResponse(
+        200,
+        "Filtered profiles fetched successfully",
+        filterProfiles,
+      ),
+    );
+  }
 }

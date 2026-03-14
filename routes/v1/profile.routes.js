@@ -10,7 +10,6 @@ import { isAuth } from "../../middlewares/auth.middleware.js";
 import { upload } from "../../middlewares/upload.middleware.js";
 
 const router = express.Router();
-
 router
   .route("/new")
   .post(
@@ -20,6 +19,9 @@ router
     asyncHandler(ProfileController.createProfile),
   );
 
+  router
+    .route("/preference")
+    .get(isAuth, asyncHandler(ProfileController.getPreference));
 router
   .route("/horoscope")
   .post(isAuth, asyncHandler(ProfileController.addHoroscope));
@@ -40,5 +42,16 @@ router
 router
   .route("/:id")
   .delete(isAuth, asyncHandler(ProfileController.deleteProfile));
+
+router
+  .route("/preference")
+  .post(isAuth, asyncHandler(ProfileController.addPreferences));
+router
+  .route("/preference")
+  .put(isAuth, asyncHandler(ProfileController.updatePreference));
+router
+  .route("/filterProfile")
+  .post(isAuth, asyncHandler(ProfileController.filterMatchedProfile));
+
 
 export default router;
