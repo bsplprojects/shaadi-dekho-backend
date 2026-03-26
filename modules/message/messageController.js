@@ -1,5 +1,21 @@
 import messageModel from "./message.model.js";
 
+export const postMessage = async (req, res) => {
+  try {
+    const { senderId, receiverId, text } = req.body;
+
+    const message = await messageModel.create({
+      senderId,
+      receiverId,
+      text,
+    });
+
+    res.status(201).json(message);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getMessages = async (req, res) => {
   const { user1, user2 } = req.params;
 

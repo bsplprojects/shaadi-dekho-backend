@@ -41,7 +41,6 @@ const socketHandler = (io) => {
 
     // Handle disconnect
     socket.on("disconnect", () => {
-      console.log("Disconnected:", socket.id);
 
       for (let userId in userSocketMap) {
         if (userSocketMap[userId] === socket.id) {
