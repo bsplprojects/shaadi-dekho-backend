@@ -138,6 +138,15 @@ const profileSchema = new mongoose.Schema(
       default: false,
     },
 
+    isViewed: {
+      type: Boolean,
+    },
+
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+
     memberType: {
       type: String,
       enum: ["free", "premium"],

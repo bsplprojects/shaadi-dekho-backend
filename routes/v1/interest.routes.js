@@ -8,5 +8,11 @@ router
   .route("/new")
   .post(isAuth, asyncHandler(InterestController.createInterest));
 
-  router.route("/getAllInterest").get(isAuth, asyncHandler(InterestController.getAllInterest))
+router
+  .route("/getAllInterest")
+  .get(isAuth, asyncHandler(InterestController.getAllInterest));
+
+router.route("/updateStatus").post(isAuth,asyncHandler(InterestController.updateInterestStatus));
+
+
 export default router;

@@ -1,10 +1,10 @@
 import { ApiError } from "../../utils/apiError.js";
-import Profile from "./profile.model.js";
 import { generateUniqueMemberId } from "../../utils/generateMemberId.js";
 import Auth from "../auth/auth.model.js";
 import { calculateProfileCompletion } from "./profile.helper.js";
 import preferencesModel from "./preferences.model.js";
 import { logger } from "../../lib/logger.js";
+import Profile from "./profile.model.js";
 
 export class ProfileService {
   static async create(userId, data, imagePaths) {
@@ -64,7 +64,7 @@ export class ProfileService {
       user: { $ne: userId },
       "basicDetails.gender": oppositeGender,
     }).select(
-      "memberType memberId verified user basicDetails.name basicDetails.dob basicDetails.height basicDetails.age religion.religion location.state professional.education professional.occupation professional.annualIncome images createdAt",
+      "memberType memberId verified user basicDetails.name basicDetails.dob basicDetails.gender basicDetails.height basicDetails.age religion.religion location.state professional.education professional.occupation professional.annualIncome images createdAt",
     );
 
     return profiles;

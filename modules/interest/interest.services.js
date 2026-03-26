@@ -1,92 +1,166 @@
 import mongoose from "mongoose";
 import { ApiError } from "../../utils/apiError.js";
-import InterestModel from "../interest/interest.model.js";
-import profile from "../profile/profile.model.js";
+import Interest from "../interest/interest.model.js";
+import profileModel from "../profile/profile.model.js";
 export class InterestServices {
-  static async addInterest(to, by) {
-    if (!to) {
-      throw new ApiError("Missing InterestedTo ID ", 400);
-    }
-    if (!by) {
-      throw new ApiError("Missing InterestedBy ID ", 400);
+  static async addInterest(targetProfileId, userId) {
+    if (!userId || !targetProfileId) return;
+    
+    const profile = await profileModel.findById(targetProfileId);
+    
+    if (!profile) return;
+    const targetUserId = profile.user;
+  
+
+    if (userId.toString() === targetUserId.toString()) return;
+
+    const now = new Date();
+
+    await Interest.updateOne(
+      { interestedBy: userId },
+      { $setOnInsert: { interestedBy: userId } },
+      { upsert: true },
+    );
+
+    await Interest.updateOne(
+      { interestedBy: targetUserId },
+      { $setOnInsert: { interestedBy: targetUserId } },
+      { upsert: true },
+    );
+    const res1 = await Interest.updateOne(
+      { interestedBy: userId, "interestedByYou.userId": targetUserId },
+      { $set: { "interestedByYou.$.interestedAt": now } },
+    );
+
+    if (res1.matchedCount === 0) {
+      await Interest.updateOne(
+        { interestedBy: userId },
+        {
+          $push: {
+            interestedByYou: {
+              userId: targetUserId,
+              interestedAt: now,
+              status: "pending",
+            },
+          },
+        },
+      );
     }
 
-    const toId = mongoose.Types.ObjectId.createFromHexString(to);
+    const res2 = await Interest.updateOne(
+      { interestedBy: targetUserId, "interestedToYou.userId": userId },
+      { $set: { "interestedToYou.$.interestedAt": now } },
+    );
 
-    const existingInterest = await InterestModel.findOne({
-      interestTo: toId,
-      interestedBy: by,
-    });
-    if (existingInterest) {
-      throw new ApiError("Interest already sent", 400);
+    if (res2.matchedCount === 0) {
+      await Interest.updateOne(
+        { interestedBy: targetUserId },
+        {
+          $push: {
+            interestedToYou: {
+              userId: userId,
+              interestedAt: now,
+              status: "pending",
+            },
+          },
+        },
+      );
     }
-
-    const interest = await InterestModel.create({
-      interestTo: to,
-      interestedBy: by,
-    });
-    return interest;
   }
 
-  // Fetch all interests sent by this user, including full 'interestTo' profile
-  static async getAllInterest(userID) {
-    const interests = await InterestModel.find({
-      interestedBy: userID,
-      isDeleted: false,
-    })
-      .populate(
-        "interestTo",
-        "basicDetails.name basicDetails.age basicDetails.city",
-      ) // populate all needed fields
-      .populate("interestedBy", "basicDetails.name") // optional, if you want sender info too
-      .sort({ createdAt: -1 });
+  static async getAllInterest(userId) {
+    if (!userId) return { interestedByYou: [], interestedToYou: [] };
 
-    // Format for frontend
-    const formatted = interests.map((i) => ({
-      _id: i._id,
-      type: "sent",
-      status: i.status,
-      name: i.interestTo?.basicDetails?.name || "Unknown",
-      age: i.interestTo?.basicDetails?.age || 0,
-      city: i.interestTo?.basicDetails?.city || "Unknown",
-      initials: i.interestTo?.basicDetails?.name
-        ? i.interestTo.basicDetails.name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-        : "NA",
-    }));
+    // Find the user's interest document
+    const doc = await Interest.findOne({ interestedBy: userId });
 
-    return formatted;
+    if (!doc) {
+      return {
+        interestedByYou: [],
+        interestedToYou: [],
+      };
+    }
+
+    // Extract userIds
+    const byYouIds = doc.interestedByYou.map((v) => v.userId.toString());
+    const toYouIds = doc.interestedToYou.map((v) => v.userId.toString());
+
+    // Get all related profiles from DB
+    const allIds = [...new Set([...byYouIds, ...toYouIds])];
+
+    const profiles = await profileModel
+      .find({ user: { $in: allIds } })
+      .select("basicDetails location professional images religion user");
+
+    // Map profiles by userId
+    const map = new Map(profiles.map((p) => [p.user.toString(), p]));
+
+    // Merge profile + status
+    const interestedByYou = doc.interestedByYou
+      .map((v) => {
+        const profile = map.get(v.userId.toString());
+        if (!profile) return null;
+        return {
+          ...profile.toObject(),
+          status: v.status,
+          interestedAt: v.interestedAt,
+        };
+      })
+      .filter(Boolean);
+
+    const interestedToYou = doc.interestedToYou
+      .map((v) => {
+        const profile = map.get(v.userId.toString());
+        if (!profile) return null;
+        return {
+          ...profile.toObject(),
+          status: v.status,
+          interestedAt: v.interestedAt,
+        };
+      })
+      .filter(Boolean);
+
+    return { interestedByYou, interestedToYou };
   }
-  // static async getAllReceivedInterest(userID) {
-  //   const interests = await InterestModel.find({
-  //     interestTo: userID,
-  //     isDeleted: false,
-  //   })
-  //     .populate(
-  //       "interestTo",
-  //       "basicDetails.name basicDetails.age basicDetails.city",
-  //     ) // populate all needed fields
-  //     .populate("interestedBy", "basicDetails.name") // optional, if you want sender info too
-  //     .sort({ createdAt: -1 });
 
-  //   // Format for frontend
-  //   const formatted = interests.map((i) => ({
-  //     _id: i._id,
-  //     type: "sent",
-  //     status: i.status,
-  //     name: i.interestedBy?.basicDetails?.name || "Unknown",
-  //     age: i.interestedBy?.basicDetails?.age || 0,
-  //     city: i.interestedBy?.basicDetails?.city || "Unknown",
-  //     initials: i.interestedBy?.basicDetails?.name
-  //       ? i.interestedBy.basicDetails.name
-  //           .split(" ")
-  //           .map((n) => n[0])
-  //           .join("")
-  //       : "NA",
-  //   }));
+  // interest.service.js
+  static async updateInterestStatus(userId, targetUserId, status) {
+    const now = new Date();
 
-  //   return formatted;
-  // }
+    const userObj = new mongoose.Types.ObjectId(userId);
+    const targetObj = new mongoose.Types.ObjectId(targetUserId);
+
+    // ✅ 1. Update YOUR document (you received interest)
+    const res1 = await Interest.updateOne(
+      {
+        interestedBy: userObj,
+        "interestedToYou.userId": targetObj,
+      },
+      {
+        $set: {
+          "interestedToYou.$.status": status,
+          "interestedToYou.$.interestedAt": now,
+        },
+      },
+    );
+
+    // ✅ 2. Update OTHER USER document (they sent interest)
+    const res2 = await Interest.updateOne(
+      {
+        interestedBy: targetObj,
+        "interestedByYou.userId": userObj,
+      },
+      {
+        $set: {
+          "interestedByYou.$.status": status,
+          "interestedByYou.$.interestedAt": now,
+        },
+      },
+    );
+
+    console.log("res1:", res1);
+    console.log("res2:", res2);
+
+    return { targetUserId, status };
+  }
 }

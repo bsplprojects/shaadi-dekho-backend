@@ -1,52 +1,60 @@
 import mongoose from "mongoose";
 
-const interestSchema = new mongoose.Schema(
+const ShortListSchema = mongoose.Schema(
+  // {
+  //   ids: [
+  //     {
+  //       id: String,
+  //     },
+  //   ],
+  //   shortlistedBy: {
+  //     type: mongoose.Schema.Types.ObjectId,
+  //     ref: "Auth",
+  //   },
+  // },
+
   {
-    interestedBy: {
+    shortlistedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Auth",
       required: true,
     },
 
-    interestedByYou: [
+    // profiles I viewed
+    shortlistedByYou: [
       {
         userId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Auth",
         },
-        interestedAt: {
+        shortlistedAt: {
           type: Date,
           default: Date.now,
         },
         status: {
           type: String,
-          enum: ["pending", "accepted", "declined"],
-          default: "pending",
+          enum: ["shortlist", "shortlisted", "remove"],
+          default: "shortlist",
         },
       },
     ],
 
-    interestedToYou: [
+    // users who viewed me
+    shortlistedYou: [
       {
         userId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Auth",
         },
-        interestedAt: {
+        shortlistedAt: {
           type: Date,
           default: Date.now,
         },
-        status: {
-          type: String,
-          enum: ["pending", "accepted", "declined"],
-          default: "pending",
-        },
+    
       },
     ],
-
-    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
-
-export default mongoose.model("Interest", interestSchema);
+const Shortlist = new mongoose.model("Shortlist", ShortListSchema);
+export default Shortlist;
